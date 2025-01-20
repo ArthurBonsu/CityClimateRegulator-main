@@ -1,0 +1,60 @@
+# Install required packages
+!pip install web3 python-dotenv eth-account py-solc-x
+
+# Import necessary libraries
+from google.colab import drive
+import os
+import json
+import requests
+import datetime
+from web3 import Web3
+from eth_account import Account
+from solcx import compile_standard, install_solc
+
+# Mount Google Drive
+drive.mount('/content/drive')
+
+# Install Solidity compiler
+install_solc("0.8.0")
+
+# Setup project path
+PROJECT_PATH = "/content/drive/MyDrive/CityClimateRegulator-main"
+os.chdir(PROJECT_PATH)
+
+# Tatum Configuration
+TATUM_API_KEY = "t-656daeaeff6644001c295f7d-dd2d85ca212e47599bca9d44"
+TATUM_API_URL = "https://api.tatum.io/v3"
+SEPOLIA_RPC = "https://api.tatum.io/v3/ethereum/web3/sepolia"
+SEPOLIA_ADDRESS = "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045"
+
+# Define all contracts to be deployed
+CONTRACTS = {
+    'CityRegister': 'CityRegister.sol',
+    'CompanyRegister': 'CompanyRegister.sol',
+    'CityEmissions': 'CityEmissionsContract.sol',
+    'RenewalTheory': 'RenewalTheoryContract.sol',
+    'CityHealth': 'CityHealthCalculator.sol',
+    'TemperatureRenewal': 'TemperatureRenewalContract.sol',
+    'Mitigation': 'MitigationContract.sol'
+}
+
+# Create deploy directory
+!mkdir -p {PROJECT_PATH}/deployed
+
+print("\n=== Environment Check ===")
+print(f"Current working directory: {os.getcwd()}")
+print(f"Files in current directory:")
+!ls -la
+
+print("\n=== Contract Files Status ===")
+for name, file in CONTRACTS.items():
+    file_path = os.path.join(PROJECT_PATH, file)
+    if os.path.exists(file_path):
+        with open(file_path, 'r') as f:
+            content = f.read()
+            first_line = content.split('\n')[0] if content else 'Empty file'
+            print(f"✓ {name}: {file}")
+            print(f"  - Size: {len(content)} bytes")
+            print(f"  - First line: {first_line}")
+    else:
+        print(f"✗ {name}: {file} (NOT FOUND)")

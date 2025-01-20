@@ -1,0 +1,143 @@
+# Install required blockchain and Python packages
+!pip install --upgrade pip setuptools wheel
+!pip install cytoolz==0.12.2
+!pip install web3 python-dotenv eth-account py-solc-x eth-brownie requests
+
+# Install Solidity compiler and related tools
+from solcx import install_solc, set_solc_version
+import solcx
+
+# Install and set Solidity compiler version
+install_solc("0.8.20")
+set_solc_version("0.8.20")
+
+# Import necessary libraries
+from google.colab import drive
+import os
+import json
+import requests
+import datetime
+from web3 import Web3
+from eth_account import Account
+from solcx import compile_standard
+
+# Mount Google Drive (with force remount option)
+drive.mount("/content/drive", force_remount=True)
+
+# Setup project path
+PROJECT_PATH = "/content/drive/MyDrive/CityClimateRegulator-main"
+os.chdir(PROJECT_PATH)
+
+# Tatum Configuration
+TATUM_API_KEY = "t-656daeaeff6644001c295f7d-dd2d85ca212e47599bca9d44"
+TATUM_API_URL = "https://api.tatum.io/v3"
+SEPOLIA_RPC = "https://api.tatum.io/v3/ethereum/web3/sepolia"
+SEPOLIA_ADDRESS = "0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045"
+
+# Define all contracts to be deployed
+CONTRACTS = {
+    'CityRegister': 'CityRegister.sol',
+    'CompanyRegister': 'CompanyRegister.sol',
+    'CityEmissions': 'CityEmissionsContract.sol',
+    'RenewalTheory': 'RenewalTheoryContract.sol',
+    'CityHealth': 'CityHealthCalculator.sol',
+    'TemperatureRenewal': 'TemperatureRenewalContract.sol',
+    'Mitigation': 'MitigationContract.sol'
+}
+
+# Blockchain Libraries Setup
+def setup_blockchain_libraries():
+    """
+    Set up blockchain contract libraries with error handling and verification
+    """
+    # Create base library directory
+    !mkdir -p /content/blockchain_libs
+
+    # OpenZeppelin Contracts Installation
+    print("\n=== Installing OpenZeppelin Contracts ===")
+    !mkdir -p /content/blockchain_libs/openzeppelin-contracts
+    !wget -q https://github.com/OpenZeppelin/openzeppelin-contracts/archive/master.zip -O /content/blockchain_libs/openzeppelin.zip
+    !unzip -q -o /content/blockchain_libs/openzeppelin.zip -d /content/blockchain_libs/openzeppelin-contracts
+    !rm /content/blockchain_libs/openzeppelin.zip
+
+    # Chainlink Contracts Installation
+    print("\n=== Installing Chainlink Contracts ===")
+    !mkdir -p /content/blockchain_libs/chainlink-contracts
+    !wget -q https://github.com/smartcontractkit/chainlink/archive/master.zip -O /content/blockchain_libs/chainlink.zip
+    !unzip -q -o /content/blockchain_libs/chainlink.zip -d /content/blockchain_libs/chainlink-contracts
+    !rm /content/blockchain_libs/chainlink.zip
+
+    # Uniswap V2 Contracts Installation
+    print("\n=== Installing Uniswap V2 Contracts ===")
+    !mkdir -p /content/blockchain_libs/uniswap-v2-contracts
+    !wget -q https://github.com/Uniswap/v2-periphery/archive/master.zip -O /content/blockchain_libs/uniswap.zip
+    !unzip -q -o /content/blockchain_libs/uniswap.zip -d /content/blockchain_libs/uniswap-v2-contracts
+    !rm /content/blockchain_libs/uniswap.zip
+
+    # Detailed Verification
+    print("\n=== Chainlink Contracts Verification ===")
+    !echo "Directory contents:"
+    !ls -la /content/blockchain_libs/chainlink-contracts
+
+    print("\n=== Uniswap V2 Contracts Verification ===")
+    !echo "Directory contents:"
+    !ls -la /content/blockchain_libs/uniswap-v2-contracts
+
+# Execute library setup
+setup_blockchain_libraries()
+
+# Create deploy directory
+!mkdir -p {PROJECT_PATH}/deployed
+
+# Environment and Contract Verification
+print("\n=== Environment Check ===")
+print(f"Current working directory: {os.getcwd()}")
+print(f"Files in current directory:")
+!ls -la
+
+# Verify contract library installations
+print("\n=== Blockchain Library Verification ===")
+print("OpenZeppelin Contracts:")
+!ls /content/blockchain_libs/openzeppelin-contracts/openzeppelin-contracts-master/contracts
+
+print("\nChainlink Contracts:")
+!ls /content/blockchain_libs/chainlink-contracts/chainlink-master/contracts
+
+# Contract Files Status Check
+print("\n=== Contract Files Status ===")
+for name, file in CONTRACTS.items():
+    file_path = os.path.join(PROJECT_PATH, file)
+    if os.path.exists(file_path):
+        with open(file_path, 'r') as f:
+            content = f.read()
+            first_line = content.split('\n')[0] if content else 'Empty file'
+            print(f"✓ {name}: {file}")
+            print(f"  - Size: {len(content)} bytes")
+            print(f"  - First line: {first_line}")
+    else:
+        print(f"✗ {name}: {file} (NOT FOUND)")
+
+# Import path modification function
+def modify_contract_imports(source_code, project_path):
+    """
+    Modify import statements to use local library paths
+    """
+    # OpenZeppelin import modifications
+    source_code = source_code.replace(
+        'import "@openzeppelin/contracts/',
+        f'import "{project_path}/content/blockchain_libs/openzeppelin-contracts/openzeppelin-contracts-master/contracts/'
+    )
+    
+    # Chainlink import modifications
+    source_code = source_code.replace(
+        'import "@chainlink/contracts/',
+        f'import "{project_path}/content/blockchain_libs/chainlink-contracts/chainlink-master/contracts/'
+    )
+    
+    # Uniswap V2 import modifications
+    source_code = source_code.replace(
+        'import "@uniswap/v2-periphery/contracts/',
+        f'import "{project_path}/content/blockchain_libs/uniswap-v2-contracts/v2-periphery-master/contracts/'
+    )
+    
+    return source_code
