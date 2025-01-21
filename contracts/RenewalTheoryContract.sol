@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-import "@openzeppelin/contracts/security/Pausable.sol";
+import "./lib/openzeppelin/contracts/utils/math/SafeMath.sol";
+import "./lib/openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "./lib/uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
+import "./lib/openzeppelin/contracts/access/Ownable.sol";
+import "./lib/openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "./lib/openzeppelin/contracts/security/Pausable.sol";
 
 // Base contract for handling renewal theory calculations
 contract RenewalTheoryContract {

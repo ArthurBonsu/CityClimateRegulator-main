@@ -15,16 +15,15 @@ class BlockchainWorkflow:
         self.contract_addresses = contract_addresses
         self.contracts = {}
 
-    def load_contract(self, name, abi_path):
-        try:
-            with open(abi_path, 'r') as abi_file:
-                abi = json.load(abi_file)
-            address = self.contract_addresses[name]
-            self.contracts[name] = self.w3.eth.contract(address=Web3.toChecksumAddress(address), abi=abi)
-            logging.info(f"Contract {name} loaded successfully.")
-        except Exception as e:
-            logging.error(f"Error loading contract {name}: {str(e)}")
-            raise
+def load_deployed_contracts(self):
+    with open('deployed/deployment_info.json', 'r') as f:
+        deployment_info = json.load(f)
+    
+    for name, info in deployment_info['contracts'].items():
+        self.contracts[name] = self.w3.eth.contract(
+            address=Web3.toChecksumAddress(info['address']),
+            abi=info['abi']
+        )
 
     async def run_complete_workflow(self, city_data_path, company_data_path):
         try:

@@ -1,6 +1,6 @@
 import asyncio
 from blockchain_workflow import BlockchainWorkflow
-
+ // contract_addresses = **0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045
 contract_addresses = {
     'CityRegister': '0x...',
     'CompanyRegister': '0x...',
