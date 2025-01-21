@@ -1,0 +1,139 @@
+class TatumAPIHandler:
+    def __init__(self, api_key, network='sepolia'):
+        self.api_key = api_key
+        self.network = network
+        self.headers = {
+            'x-api-key': api_key,
+            'accept': 'application/json',
+            'content-type': 'application/json'
+        }
+        # Dynamic gateway URL based on network
+        self.network_urls = {
+            'mainnet': 'https://ethereum-mainnet.gateway.tatum.io/',
+            'sepolia': 'https://ethereum-sepolia.gateway.tatum.io/'
+        }
+        self.gateway_url = self.network_urls.get(network, self.network_urls['sepolia'])
+        print(f"Tatum API Handler initialized for {network}")
+
+    def test_connection(self):
+        """Test connection to Tatum"""
+        try:
+            body = {
+                'jsonrpc': '2.0',
+                'method': 'eth_blockNumber',
+                'id': 1
+            }
+
+            print("\nTesting Tatum Connection...")
+            response = requests.post(
+                self.gateway_url,
+                headers=self.headers,
+                json=body
+            )
+
+            print(f"Response Status: {response.status_code}")
+            print(f"Response: {response.text}")
+
+            # Detailed error handling
+            if response.status_code == 403:
+                print("\n❌ Authentication Error:")
+                error_data = response.json()
+                print(f"Error Message: {error_data.get('message', 'Unknown error')}")
+                print("Possible reasons:")
+                print("1. Incorrect API key")
+                print("2. Mismatched network (mainnet/testnet)")
+                print("3. API key restrictions")
+                return False
+
+            return response.ok
+
+        except Exception as e:
+            print(f"Connection test failed: {str(e)}")
+            return False
+
+    def get_balance(self, address):
+        """Get balance for address"""
+        try:
+            body = {
+                'jsonrpc': '2.0',
+                'method': 'eth_getBalance',
+                'params': [address, 'latest'],
+                'id': 1
+            }
+
+            response = requests.post(
+                self.gateway_url,
+                headers=self.headers,
+                json=body
+            )
+
+            if response.ok:
+                result = response.json()
+                # Convert hex balance to decimal
+                if 'result' in result:
+                    balance_wei = int(result['result'], 16)
+                    balance_eth = balance_wei / 10**18  # Convert Wei to ETH
+                    print(f"Balance: {balance_eth} ETH")
+                return result
+            return None
+
+        except Exception as e:
+            print(f"Balance check failed: {str(e)}")
+            return None
+
+    def deploy_contract(self, contract_bytecode, from_address, gas_limit=200000):
+        """
+        Deploy contract using Tatum API
+
+        :param contract_bytecode: Compiled contract bytecode
+        :param from_address: Deploying wallet address
+        :param gas_limit: Gas limit for deployment
+        :return: Deployment transaction details
+        """
+        try:
+            body = {
+                'jsonrpc': '2.0',
+                'method': 'eth_sendTransaction',
+                'params': [{
+                    'from': from_address,
+                    'data': contract_bytecode,
+                    'gas': hex(gas_limit)  # Convert to hex
+                }],
+                'id': 1
+            }
+
+            print("Sending contract deployment request...")
+            response = requests.post(
+                self.gateway_url,
+                headers=self.headers,
+                json=body
+            )
+
+            if response.ok:
+                result = response.json()
+                print("Deployment request successful")
+                return result
+            else:
+                print(f"Deployment failed: {response.text}")
+                return None
+
+        except Exception as e:
+            print(f"Deployment failed: {str(e)}")
+            return None
+
+# Example usage
+print("\n=== Testing Tatum Connection ===")
+try:
+    # Use Sepolia testnet with the new API key
+    tatum = TatumAPIHandler('t-656daeaeff6644001c295f7d-dd2d85ca212e47599bca9d44', network='sepolia')
+
+    # Test connection
+    connection_ok = tatum.test_connection()
+    print(f"\nConnection successful: {connection_ok}")
+
+    if connection_ok:
+        # Test balance check for test address
+        print("\nChecking balance for test address...")
+        balance = tatum.get_balance("0xd8dA6BF26964aF9D7eEd9e03E53415D37aA96045")
+except Exception as e:
+    print(f"Setup failed: {str(e)}")
